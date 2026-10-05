@@ -1209,8 +1209,37 @@ int main() {
                                 .find("4FA9486610B42A92:22FC55CE134777AC:1:1280:720:26:filter_scaled:source=native") !=
                             std::string::npos,
                     "both final composites (motion blur on and off) enlarge the native glow (#16)");
-    passed &= Check(std::string(kTitleNativeGridRules).rfind(std::string(k091TitleNativeGridRules), 0) == 0,
-                    "the 0.9.2 rules extend the 0.9.1 rules");
+    // #16: 0.9.2-0.9.3.1 rendered the bloom passes on the native grid.
+    const std::string published092 = std::string("pc_config_version = 1\nresolution_scale = 2\n") +
+                                      "draw_resolution_scale_threshold = 640\n" +
+                                      "draw_resolution_scale_native_grid_rules = \"" +
+                                      std::string(k092TitleNativeGridRules) + "\"\n" +
+                                      "native_resolve_region_tracking = true\n";
+    const toml::table published092_table = toml::parse(
+        RuntimePcConfigWithTitleScaleRequirements(published092, "published092", &changed));
+    passed &= Check(changed &&
+                        published092_table["draw_resolution_scale_native_grid_rules"].value_or(
+                            std::string{}) == kTitleNativeGridRules,
+                    "the 0.9.2-0.9.3.1 rules must be upgraded (#16)");
+    {
+        // No bloom pass renders a console-resolution target: every image
+        // filter keeps a scaled output; only the lookup tables (data rules)
+        // stay on the native grid.
+        const std::string current(kTitleNativeGridRules);
+        size_t filters = 0;
+        size_t scaled = 0;
+        for (size_t at = 0; (at = current.find(":filter", at)) != std::string::npos; ++at) {
+            ++filters;
+            if (current.compare(at, 14, ":filter_scaled") == 0) ++scaled;
+        }
+        passed &= Check(filters == 8 && scaled == filters,
+                        "every bloom pass keeps a scaled output (#16)");
+        passed &= Check(current.rfind(std::string(kLegacyTitleNativeGridRules), 0) == 0 &&
+                            current.find("B29F0BF45937C4C4:69779AD07425E356:0:324:18:26;") != std::string::npos,
+                        "the lookup tables stay on the native grid");
+        passed &= Check(std::string(k092TitleNativeGridRules).rfind(std::string(k091TitleNativeGridRules), 0) == 0,
+                        "the 0.9.2 rules extended the 0.9.1 rules");
+    }
     {
         // Every packaged preset and the example configuration carry exactly
         // the current rules wherever they set native-grid rules.

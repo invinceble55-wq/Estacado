@@ -172,11 +172,13 @@ Windows display language.
 - Shaders the release's list does not cover yet (mostly later levels) are
   compiled for your graphics card the first time they appear, which can
   stutter briefly; later sessions reuse them.
-- Being looked into: black dots or flickering dark squares above internal
-  scale 1x on some NVIDIA RTX 20 and 30 series cards
+- Black dots or flickering dark squares above internal scale 1x on some
+  NVIDIA RTX 20 and 30 series cards
   ([#16](https://github.com/invinceble55-wq/Estacado/issues/16),
-  [#20](https://github.com/invinceble55-wq/Estacado/issues/20); internal
-  scale 1x avoids them), green glitches in the Otherworld until a restart
+  [#20](https://github.com/invinceble55-wq/Estacado/issues/20)): 0.9.4
+  removes the cause the tests on an affected card pointed at; confirmation
+  from affected cards is pending (internal scale 1x avoids them).
+- Being looked into: green glitches in the Otherworld until a restart
   ([#14](https://github.com/invinceble55-wq/Estacado/issues/14)) and face
   shading that flickers in some conversations
   ([#4](https://github.com/invinceble55-wq/Estacado/issues/4)).

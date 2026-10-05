@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.9.4 (pre-release)
+
+- **Black dots and flickering squares above internal scale 1x** on some
+  NVIDIA RTX 20 and 30 series cards
+  ([#16](https://github.com/invinceble55-wq/Estacado/issues/16), probably
+  also [#20](https://github.com/invinceble55-wq/Estacado/issues/20)): the
+  bloom fix drew the glow passes (downsample and blurs) at the console's
+  resolution inside the scaled frame. Those console-resolution images share
+  video memory with the game's scaled image, so parts of the image were
+  copied between the two resolutions every frame, in menus and gameplay,
+  most of all while the game uses its 2x anti-aliasing (it switches from 4x
+  to 2x when the frame rate drops). Of the four test switches in 0.9.3, only
+  turning the bloom rules off removed the dots on the reporter's card; the
+  test PC never showed them. The glow passes now render at the internal
+  resolution and sample with the console's footprint, so nothing is copied
+  between resolutions, and the glow stays smooth (main-menu glow at 2x:
+  banding index 0.395, against 0.378 in 0.9.3.1 and 0.457 without the
+  bloom fix; lower is smoother). Settings files with the 0.9.2 to 0.9.3.1
+  rules are updated when the game starts; the old rules can still be set
+  by hand for comparison.
+- **Speed:** at internal 2x the frame's GPU time is 1 to 3% lower than in
+  0.9.3.1 (the copies are gone); at 3x it is about 3% higher and at 4x about
+  6 to 9% higher, because each glow pass now covers 9 or 16 times as many
+  pixels as on the console and reads its source with the console's footprint
+  (Chinatown street on the test PC, 1080p to 4K, both run orders).
+
 ## 0.9.3.1 (pre-release)
 
 - **Launcher settings with the session log:** the optional session log
