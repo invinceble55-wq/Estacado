@@ -49,6 +49,7 @@
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
+#include <string_view>
 #include <vector>
 
 #include <image.h>
@@ -247,6 +248,26 @@ void OpenSessionLogIfRequested(const std::filesystem::path& dataFolder) {
     std::fflush(stderr);
 }
 
+// The settings launcher reads and writes settings by running this executable
+// with one of these actions and reading its standard output. The session log
+// must leave that output alone: with session_log.txt present (0.9.2-0.9.3) the
+// launcher read nothing and showed every setting empty, key bindings "(none)".
+bool IsLauncherSettingsAction(int argc, char** argv) {
+    static constexpr std::string_view kActions[] = {
+        "--help",          "-h",           "--print-paths",   "--list-presets",
+        "--print-capabilities", "--validate-config", "--inspect-config",
+        "--validate-mods", "--verify-package", "--edit-config", "--install-preset"};
+    for (int index = 1; index < argc; ++index) {
+        if (!argv[index]) continue;
+        const std::string_view argument(argv[index]);
+        if (argument.rfind("--install-preset=", 0) == 0) return true;
+        for (const std::string_view action : kActions) {
+            if (argument == action) return true;
+        }
+    }
+    return false;
+}
+
 using VirtualAlloc2Fn = PVOID(WINAPI*)(HANDLE, PVOID, SIZE_T, ULONG, ULONG,
     MEM_EXTENDED_PARAMETER*, ULONG);
 using MapViewOfFile3Fn = PVOID(WINAPI*)(HANDLE, HANDLE, PVOID, ULONG64, SIZE_T,
@@ -433,7 +454,7 @@ int main(int argc, char** argv) {
     const RuntimeUserDataLayout startupLayout =
         RuntimeDetectUserDataLayout(RuntimeExecutableDirectory());
     PrepareCrashEvidence(startupLayout.localData / L"logs");
-    OpenSessionLogIfRequested(startupLayout.localData);
+    if (!IsLauncherSettingsAction(argc, argv)) OpenSessionLogIfRequested(startupLayout.localData);
     SetUnhandledExceptionFilter(CrashEvidence);
     {
         // Developer check of the crash path (report line, log and minidump):

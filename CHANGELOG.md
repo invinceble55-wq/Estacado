@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.9.3.1 (pre-release)
+
+- **Launcher settings with the session log:** the optional session log
+  (`session_log.txt` next to `TheDarkness.exe`) also took the output of the
+  settings actions the launcher runs in the background (reading and saving
+  settings, presets), so while the file was there the launcher showed every
+  setting empty and the key bindings as "(none)" (0.9.2 and 0.9.3; the game
+  and the settings file were not affected). The session log now covers game
+  starts only.
+
 ## 0.9.3 (pre-release)
 
 - **Dark triangles on characters under lamps** (Jenny's shoulder,
