@@ -6,9 +6,9 @@ param(
     # Check the checkout against the pinned upstream ReXGlue commit (the
     # original development tree); a fork checkout skips this.
     [switch]$VerifyProvenance,
-    # Ready-made player package: without the NVIDIA DLSS SDK (ready-made
-    # packages leave it out until NVIDIA has approved the credits its terms
-    # require) and without paths of this machine in the DLLs, in its own
+    # Ready-made player package: without the NVIDIA DLSS and Streamline SDKs
+    # (ready-made packages leave them out until NVIDIA has approved the credits
+    # its terms require) and without paths of this machine in the DLLs, in its own
     # trees (out/build/win-amd64-player, out/win-amd64-player/Release).
     [switch]$Player
 )
@@ -28,7 +28,7 @@ if (-not (Test-Path -LiteralPath $source -PathType Container)) {
 # The project's configuration: ThinLTO, the GPU PGO profile when present,
 # player builds without diagnostics, Direct3D 12 only, no ReXGlue tests, the
 # FidelityFX API from build/deps (scripts/fetch-sdks.ps1) instead of a fetch.
-$profile = Join-Path $root 'config/pgo/rexgpu-v467.profdata'
+$profile = Join-Path $root 'config/pgo/rexgpu-v496.profdata'
 $pgo = 'OFF'
 if (-not $NoPgo -and (Test-Path -LiteralPath $profile -PathType Leaf)) { $pgo = 'USE' }
 $options = @(
@@ -48,14 +48,22 @@ if ($Player) {
     $options += @(
         '-B', $binary,
         '-D', ('REXGLUE_DLSS_SDK_DIR=' + ((Join-Path $root 'build/deps/no-dlss-in-player-packages') -replace '\\', '/')),
+        '-D', ('REXGLUE_STREAMLINE_SDK_DIR=' + ((Join-Path $root 'build/deps/no-streamline-in-player-packages') -replace '\\', '/')),
         '-D', "CMAKE_C_FLAGS=/clang:-march=x86-64-v3 $prefix",
         '-D', "CMAKE_CXX_FLAGS=/clang:-march=x86-64-v3 $prefix")
 }
 
+# A player tree configured before an SDK option existed would take that
+# option's default (the SDK) on CMake's automatic re-run; configure it again.
+$configureNeeded = $Configure -or -not (Test-Path -LiteralPath $cache -PathType Leaf)
+if ($Player -and -not $configureNeeded -and
+    -not (Select-String -LiteralPath $cache -Pattern '^REXGLUE_STREAMLINE_SDK_DIR:' -Quiet)) {
+    $configureNeeded = $true
+}
+
 Push-Location $source
 try {
-    if ($Configure -or
-        -not (Test-Path -LiteralPath $cache -PathType Leaf)) {
+    if ($configureNeeded) {
         Write-CommandLine ('cmake --preset win-amd64 ' + ($options -join ' '))
         & cmake --preset win-amd64 @options
         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

@@ -80,9 +80,10 @@ version we own: we checked a Russian release this way (same code, only text
 and font data differ) but have not played it through.
 
 A release with different code (another build of the game, or a title update)
-does not run yet. The launcher says so plainly and saves a detailed report in
-`logs\game_version_report.txt` (names, sizes and hashes only, no game data)
-that you can attach to an issue if you like. Never upload game files.
+does not run yet. The launcher says so plainly and saves a detailed report,
+`game_version_report.txt` in the `logs` folder (names, sizes and hashes only,
+no game data), that you can attach to an issue if you like. Never upload game
+files.
 
 Dump the game from your own disc; this project does not provide or link to
 game files.
@@ -171,12 +172,14 @@ Windows display language.
 - Shaders the release's list does not cover yet (mostly later levels) are
   compiled for your graphics card the first time they appear, which can
   stutter briefly; later sessions reuse them.
-- Being looked into: green glitches in the Otherworld until a restart
-  ([#14](https://github.com/invinceble55-wq/Estacado/issues/14)), face
+- Being looked into: black dots or flickering dark squares above internal
+  scale 1x on some NVIDIA RTX 20 and 30 series cards
+  ([#16](https://github.com/invinceble55-wq/Estacado/issues/16),
+  [#20](https://github.com/invinceble55-wq/Estacado/issues/20); internal
+  scale 1x avoids them), green glitches in the Otherworld until a restart
+  ([#14](https://github.com/invinceble55-wq/Estacado/issues/14)) and face
   shading that flickers in some conversations
-  ([#4](https://github.com/invinceble55-wq/Estacado/issues/4)) and dark
-  triangles on some character models
-  ([#6](https://github.com/invinceble55-wq/Estacado/issues/6)).
+  ([#4](https://github.com/invinceble55-wq/Estacado/issues/4)).
 - Not in this release: HDR output, temporal anti-aliasing with upscalers
   (such as DLSS, FSR 3 or XeSS) and frame generation. If you would use one of
   them, say so in an issue.
@@ -189,8 +192,9 @@ Please open an issue with the **Bug report** template. It asks for:
   resolution/refresh rate;
 - your `TheDarkness.pc.toml` (settings, in `Saved Games\Estacado`) and what
   you did when the problem happened;
-- the `logs` folder next to `TheDarkness.exe` (launcher: **About**, then
-  **Logs**): `runtime_crash.log` and any `TheDarkness_fatal_*.dmp` and
+- the `logs` folder (launcher: **About**, then **Logs**; usually
+  `%LOCALAPPDATA%\Estacado\logs`, or next to `TheDarkness.exe` in a portable
+  copy): `runtime_crash.log` and any `TheDarkness_fatal_*.dmp` and
   `TheDarkness_stall_*.dmp` files.
 
 For a visual glitch, press **F9** while it is on screen: the game saves a
@@ -198,7 +202,7 @@ screenshot and a small text file describing that frame in
 `Saved Games\Estacado\screenshots`; attach both. For input or other
 problems without a crash, create an empty file named `session_log.txt` next
 to `TheDarkness.exe`, play until the problem happens, and attach the
-`logs\session_*.log` it writes.
+`session_*.log` it writes in the `logs` folder.
 
 Never attach game files (disc images, extracted files) to an issue.
 

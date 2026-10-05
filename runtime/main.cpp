@@ -801,6 +801,18 @@ int main(int argc, char** argv) {
             // REX_LANGUAGE_PACK_ROOT: another pack folder (developer checks).
             std::filesystem::path languagePackRoot =
                 userData.localData / L"language_packs" / std::filesystem::path(languagePackName);
+            {
+                // A pack installed beside the executables by an earlier
+                // version (before the local data folder) still loads.
+                std::error_code packError;
+                const std::filesystem::path besideExecutables =
+                    executableDirectory / L"language_packs" /
+                    std::filesystem::path(languagePackName);
+                if (!std::filesystem::is_directory(languagePackRoot, packError) &&
+                    std::filesystem::is_directory(besideExecutables, packError)) {
+                    languagePackRoot = besideExecutables;
+                }
+            }
             if (const char* root = std::getenv("REX_LANGUAGE_PACK_ROOT"); root && *root) {
                 languagePackRoot = std::filesystem::path(root);
             }
@@ -975,8 +987,8 @@ int main(int argc, char** argv) {
                 std::ofstream(logs / L"game_version_report.txt", std::ios::binary | std::ios::trunc)
                     << setup::XexIdentityReport(identity, launchOptions.xexPath.u8string());
                 throw std::runtime_error(
-                    setup::XexMatchText(identity) +
-                    " A detailed report is in logs\\game_version_report.txt.");
+                    setup::XexMatchText(identity) + " A detailed report is in " +
+                    (logs / L"game_version_report.txt").u8string() + ".");
             }
         }
         ConfigureExecutableSystemFlags(xex.data(), xex.size());

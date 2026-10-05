@@ -57,6 +57,13 @@ void RuntimeFlushGuestPhysicalWrites() noexcept;
 // Title guest frame-production boundary (runtime_function_trace.h
 // kRuntimeFrameLimiterBoundary): paces production per display_frame_limit.
 void RuntimeGraphicsGuestFrameBoundary() noexcept;
+// The title's frame start (its frame driver, before the frame-pool wait and
+// input processing): the plugin's latency sleep and markers.
+void RuntimeGraphicsGuestFrameStart() noexcept;
+// The title's input processor runs for the frame (latency measurement).
+void RuntimeGraphicsGuestInputSample() noexcept;
+// VdSwap queued the frame's swap command (the plugin's latency markers).
+void RuntimeGraphicsGuestSwapQueued() noexcept;
 // Whether the title shows a menu, the title screen or loading (the plugin
 // paces those by display.menu_frame_rate): 0 gameplay, 1 menu.
 void RuntimeGraphicsSetMenuState(uint32_t state) noexcept;

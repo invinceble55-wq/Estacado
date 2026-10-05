@@ -36,6 +36,7 @@ safe_area_y = 100
 [display]
 present_mode = "vrr"
 max_frame_latency = 1
+low_latency = "on"
 frame_limit = 0
 frame_rate = "original"
 menu_frame_rate = "reduced"

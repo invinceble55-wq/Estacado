@@ -1,5 +1,59 @@
 # Changelog
 
+## 0.9.3 (pre-release)
+
+- **Dark triangles on characters under lamps** (Jenny's shoulder,
+  [#6](https://github.com/invinceble55-wq/Estacado/issues/6)): the lamps that
+  cast shadow maps rebuild each receiver's position from the resolved scene
+  depth at the pixel centre, but a depth resolve of 2x MSAA copies one sample,
+  a quarter pixel away. On surfaces at a steep angle to the camera that put the
+  receiver behind the surface by about the shadow bias, so whole triangles
+  shadowed themselves. Depth resolves of 2x MSAA buffers now store the mean of
+  both samples where the pixel lies on one surface with its neighbours
+  (`resolve_depth_pixel_center`, on); silhouettes keep the sample. The
+  shadow pass's constant polygon offset is also applied as the absolute
+  depth offset it is on the Xbox 360 (`d3d12_absolute_polygon_offset`).
+- **Low latency (new, on by default):** with VSync the game stays at most two
+  frames ahead of the display (frame queue 2, the wait ends half a frame
+  before the awaited present): 144 Hz VSync at 144 FPS 24.9 -> 16.8 ms input
+  to display in the Chapter 1 ride; no change at 60 FPS; off without VSync.
+  *Settings > Performance / Frame Rate > Low latency*
+  (`display.low_latency`).
+- **Widescreen on 16:10 and 4:3 screens:** the bloom rules follow a taller
+  guest mode (1280 x 800, 1280 x 960) with *Fill wide and tall screens* on
+  ([#17](https://github.com/invinceble55-wq/Estacado/pull/17), thanks David
+  Janice).
+- **Installed copies:** logs, crash reports, the session log, language packs,
+  an extracted disc image and the game-location file go to
+  `%LOCALAPPDATA%\Estacado`, so copies under read-only folders work; a portable
+  copy (`portable.txt`) keeps everything in its folder; packs and game
+  locations set up by earlier versions are still found
+  ([#19](https://github.com/invinceble55-wq/Estacado/pull/19), thanks David
+  Janice).
+- **"Settings unavailable" in the launcher** shows Windows' own reason when
+  `TheDarkness.exe` cannot start, and what to do.
+- **Bug reports:** session logs name the graphics card and its driver; a
+  startup line `REX_GPU_TEST_SWITCHES` lists the GPU test switches in use.
+- **Test switches for picture problems on some graphics cards**
+  ([#16](https://github.com/invinceble55-wq/Estacado/issues/16),
+  [#20](https://github.com/invinceble55-wq/Estacado/issues/20)):
+  `d3d12_conservative_sync = true` puts a full GPU barrier before and after
+  every clear, copy, dispatch, resolve and draw (slow; tells missing
+  synchronisation apart from other causes); native-grid rule strings without
+  the bloom rules turn the bloom fix off;
+  `d3d12_render_target_uncompressed = true` creates single-sample colour
+  render targets with simultaneous access, which keeps the graphics card from
+  compressing them; `d3d12_transfer_stencil_clear_by_draw = true` (with the
+  existing `depth_transfer_not_equal_test = false`) clears the stencil of
+  depth buffer copies by drawing instead of a rectangle clear. The startup
+  line `REX_GPU_TEST_SWITCHES` lists them. Developer diagnostic
+  `d3d12_debug_gpu_spin` (off) delays every frame's GPU work to emulate a
+  slower graphics card.
+- ROV path (Intel): pixels rejected by depth/stencil, alpha test or alpha to
+  coverage no longer count towards occlusion queries.
+- GPU code built with a profile retrained on the current code
+  (`config/pgo/rexgpu-v496.profdata`).
+
 ## 0.9.2 (pre-release)
 
 Hotfix for regressions in 0.9.1

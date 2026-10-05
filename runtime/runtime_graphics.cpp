@@ -114,6 +114,9 @@ using NotifyPhysicalWriteFn = void (*)(void*, uint32_t, uint32_t);
 using InterruptTimingTokenFn = uint64_t (*)(void*);
 using InterruptCompletedFn = void (*)(void*);
 using FrameBoundaryFn = void (*)(void*);
+using GuestSwapFn = void (*)(void*);
+using FrameStartFn = void (*)(void*);
+using InputSampleFn = void (*)(void*);
 using InterruptTimingRecordFn = void (*)(void*, uint64_t, uint32_t, uint32_t,
     uint32_t, uint32_t, uint64_t, uint64_t, uint64_t);
 using NoteInputTransitionFn = void (*)(void*, int64_t, int64_t, uint32_t, uint32_t);
@@ -152,6 +155,9 @@ struct GraphicsAdapter {
     InterruptTimingTokenFn interrupt_timing_token{};
     InterruptCompletedFn interrupt_completed{};
     FrameBoundaryFn frame_boundary{};
+    GuestSwapFn guest_swap{};
+    FrameStartFn frame_start{};
+    InputSampleFn input_sample{};
     InterruptTimingRecordFn interrupt_timing_record{};
     NoteInputTransitionFn note_input_transition{};
     NoteInputDeviceFn note_input_device{};
@@ -716,6 +722,12 @@ bool InitializeRuntimeGraphics(uint8_t* guest_virtual_base) {
             adapter.module, "rex_gpu_embedded_close_requested");
         adapter.set_menu_state = ResolveOptional<SetMenuStateFn>(
             adapter.module, "rex_gpu_embedded_set_menu_state");
+        adapter.guest_swap = ResolveOptional<GuestSwapFn>(
+            adapter.module, "rex_gpu_embedded_guest_swap");
+        adapter.frame_start = ResolveOptional<FrameStartFn>(
+            adapter.module, "rex_gpu_embedded_frame_start");
+        adapter.input_sample = ResolveOptional<InputSampleFn>(
+            adapter.module, "rex_gpu_embedded_input_sample");
         adapter.gpu_frame_busy = ResolveOptional<GpuFrameBusyFn>(
             adapter.module, "rex_gpu_embedded_get_gpu_frame_busy_us");
         adapter.xma_setup =
@@ -1523,6 +1535,24 @@ void RuntimeGraphicsGuestFrameBoundary() noexcept {
     // switch, minimized-window cap); the runtime only reports the boundary.
     if (adapter.frame_boundary && RuntimeGraphicsIsActive()) {
         adapter.frame_boundary(adapter.gpu);
+    }
+}
+
+void RuntimeGraphicsGuestFrameStart() noexcept {
+    if (adapter.frame_start && RuntimeGraphicsIsActive()) {
+        adapter.frame_start(adapter.gpu);
+    }
+}
+
+void RuntimeGraphicsGuestInputSample() noexcept {
+    if (adapter.input_sample && RuntimeGraphicsIsActive()) {
+        adapter.input_sample(adapter.gpu);
+    }
+}
+
+void RuntimeGraphicsGuestSwapQueued() noexcept {
+    if (adapter.guest_swap && RuntimeGraphicsIsActive()) {
+        adapter.guest_swap(adapter.gpu);
     }
 }
 

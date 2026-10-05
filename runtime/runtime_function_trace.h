@@ -40,14 +40,21 @@ extern std::atomic<uint32_t> g_runtime_view_fov_active;
 void RuntimeScaleClientViewFov(PPCContext& context, uint8_t* base) noexcept;
 
 // Title functions with a runtime duty at entry: the presentation-interval
-// selector (timing modes), the FOV setters, the owned-camera input observer
-// and the guest frame-limiter boundary.
+// selector (timing modes), the FOV setters, the owned-camera input observer,
+// the guest frame-limiter boundary, the frame start and the input processor.
 constexpr uint32_t kRuntimeFrameLimiterBoundary = 0x820E2058u;
+// The title's frame driver on its producer thread, before the frame-pool wait
+// and input processing (the plugin's NVIDIA Reflex sleep).
+constexpr uint32_t kRuntimeFrameStart = 0x820DE198u;
+// The title's input processor, called by the frame driver after the frame-pool
+// wait (the plugin's input-to-present latency measurement).
+constexpr uint32_t kRuntimeInputSample = 0x820E29D8u;
 constexpr bool RuntimeFunctionEnterHasStaticDuty(uint32_t address) noexcept {
     return address == 0x8286FD68u ||
            (address >= 0x82389CA0u && address <= 0x82389CF8u) ||
            address == 0x8259D3B8u ||
-           address == kRuntimeFrameLimiterBoundary;
+           address == kRuntimeFrameLimiterBoundary || address == kRuntimeFrameStart ||
+           address == kRuntimeInputSample;
 }
 
 // Development probes (PC probes, control-read watchpoints) only feed retired

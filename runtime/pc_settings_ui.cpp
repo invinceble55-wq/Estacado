@@ -40,8 +40,13 @@ PcSettingsOffer PcSettingsOfferFor(const std::filesystem::path& dataFolder,
                                    bool downloadable) {
     PcSettingsOffer offer;
     offer.temporalAa = PcExperimentalFeature("temporal_aa");
-    const rex::ui::settings::LanguagePackFolder installed =
+    rex::ui::settings::LanguagePackFolder installed =
         rex::ui::settings::ScanLanguagePackFolder(dataFolder / L"language_packs" / L"arabic");
+    if (!(installed.strings && installed.fonts) && programFolder != dataFolder) {
+        // A pack installed beside the executables by an earlier version.
+        installed = rex::ui::settings::ScanLanguagePackFolder(programFolder / L"language_packs" /
+                                                              L"arabic");
+    }
     std::error_code error;
     offer.arabic = (installed.strings && installed.fonts) || downloadable ||
                    std::filesystem::is_regular_file(

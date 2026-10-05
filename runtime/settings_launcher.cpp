@@ -248,8 +248,25 @@ bool RunRuntimeAction(const Launcher& app, std::wstring command, std::string& ou
                                         app.directory.c_str(), &startup, &process);
     CloseHandle(writePipe);
     if (!started) {
+        const DWORD startError = GetLastError();
         CloseHandle(readPipe);
-        error = "Unable to start the settings action of TheDarkness.exe.";
+        // Usually an antivirus that removed or blocked the new executable, or
+        // a partly extracted zip: name Windows' reason and the way out.
+        wchar_t* text = nullptr;
+        FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
+                           FORMAT_MESSAGE_IGNORE_INSERTS,
+                       nullptr, startError, 0, reinterpret_cast<wchar_t*>(&text), 0, nullptr);
+        std::wstring reason = text ? text : L"";
+        if (text) LocalFree(text);
+        while (!reason.empty() && (reason.back() == L'\r' || reason.back() == L'\n' ||
+                                   reason.back() == L' ' || reason.back() == L'.')) {
+            reason.pop_back();
+        }
+        error = "Unable to start TheDarkness.exe: " +
+                (reason.empty() ? std::string("unknown reason") : WideToUtf8(reason)) +
+                " (Windows error " + std::to_string(startError) +
+                "). If an antivirus removed or blocked it, restore it and allow the game "
+                "folder, or extract the whole zip again into an empty folder.";
         return false;
     }
     output.clear();
@@ -614,8 +631,8 @@ std::string WriteVersionReport(const std::filesystem::path& directory,
     std::ofstream out(report, std::ios::binary | std::ios::trunc);
     out << setup::XexIdentityReport(identity, source);
     out.close();
-    return out ? "A detailed report is in logs\\game_version_report.txt; you can attach it to a "
-                 "bug report. Never upload game files."
+    return out ? "A detailed report is in " + report.u8string() +
+                     "; you can attach it to a bug report. Never upload game files."
                : std::string();
 }
 
@@ -897,8 +914,14 @@ void DetectTexturePacks(Launcher& app) {
     // In-game Arabic (V409): the Language setting says whether a pack is
     // installed. V440: Arabic is offered only with a pack (installed, carried
     // by the package or downloadable).
-    const ui::LanguagePackFolder arabic =
+    ui::LanguagePackFolder arabic =
         ui::ScanLanguagePackFolder(app.dataDirectory / L"language_packs" / L"arabic");
+    if (!(arabic.strings && arabic.fonts) && app.dataDirectory != app.directory) {
+        // A pack installed beside the executables by an earlier version.
+        const ui::LanguagePackFolder beside =
+            ui::ScanLanguagePackFolder(app.directory / L"language_packs" / L"arabic");
+        if (beside.strings && beside.fonts) arabic = beside;
+    }
     app.arabicPackInstalled = arabic.strings && arabic.fonts;
     app.offer = PcSettingsOfferFor(app.dataDirectory, app.directory, kLanguagePackUrl[0] != '\0');
     if (app.offer.arabic) {
@@ -1409,7 +1432,7 @@ void DrawUserDataBar(Launcher& app) {
                           ImVec2(button, 0.0f))) {
             RuntimeKeepGameFolderUserData(app.userData);
             app.userData = RuntimeDetectUserDataLayout(app.directory);
-    app.dataDirectory = app.userData.localData;
+            app.dataDirectory = app.userData.localData;
         }
     }
     ImGui::Spacing();
@@ -1736,23 +1759,23 @@ int WINAPI wWinMain(HINSTANCE instance, HINSTANCE, PWSTR, int showCommand) {
 
     Launcher app;
     app.directory = ExecutableDirectory();
+    // Saves and settings live in Saved Games (0.9.1). The first start after
+    // an update from 0.9.0 copies them there from this folder (not while the
+    // game runs: it may be saving). The local data folder (logs, packs, the
+    // game-location file) is known before the offer scans it for packs.
+    app.userData = RuntimeDetectUserDataLayout(app.directory);
+    app.dataDirectory = app.userData.localData;
+    {
+        // It may not exist yet on an installed copy's first start.
+        std::error_code ignore;
+        std::filesystem::create_directories(app.dataDirectory, ignore);
+    }
     app.offer = PcSettingsOfferFor(app.dataDirectory, app.directory, kLanguagePackUrl[0] != '\0');
     app.schemaOffer = app.offer;
     app.schema = BuildPcSettingsUiSchema(false, app.offer);
     app.model.schema = &app.schema;
     app.runtimeExecutable = app.directory / L"TheDarkness.exe";
     app.presetDirectory = app.directory / L"presets";
-    // Saves and settings live in Saved Games (0.9.1). The first start after
-    // an update from 0.9.0 copies them there from this folder (not while the
-    // game runs: it may be saving).
-    app.userData = RuntimeDetectUserDataLayout(app.directory);
-    app.dataDirectory = app.userData.localData;
-    {
-        // The local data folder (logs, packs, the game-location file) may not
-        // exist yet on an installed copy's first start.
-        std::error_code ignore;
-        std::filesystem::create_directories(app.dataDirectory, ignore);
-    }
     bool gameRunning = true;
     try {
         gameRunning = RuntimeSingleInstance::Exists(kRuntimeTitleLockName);

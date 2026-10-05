@@ -4042,6 +4042,15 @@ void RuntimeFunctionEnter(PPCContext& context, uint8_t* base, uint32_t address) 
     if (coverageMap && address >= kCoverageBase && address < kCoverageEnd) {
         coverageMap[(address - kCoverageBase) >> 2].store(1, std::memory_order_relaxed);
     }
+    if (address == kRuntimeFrameStart) {
+        // The title's frame driver: the frame starts before its frame-pool
+        // wait and input processing.
+        RuntimeGraphicsGuestFrameStart();
+    }
+    if (address == kRuntimeInputSample) {
+        // The title reads its input for the frame.
+        RuntimeGraphicsGuestInputSample();
+    }
     if (address == kRuntimeFrameLimiterBoundary) {
         // The title's per-frame scene builder on its producer thread: the
         // guest frame boundary where production is paced (frame limiter).

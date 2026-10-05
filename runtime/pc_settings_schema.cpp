@@ -27,6 +27,10 @@ const std::vector<PcEditableSettingSpec>& PcEditableSettingsSchema() {
          PcSettingEditorKind::Choice, 0.0, 0.0, 0.0,
          {{"vsync", L"On (recommended)"}, {"immediate", L"Off"},
           {"vrr", L"Off, falling back to On without tearing support", true}}},
+        // V490: the frame-queue limit for players (rex/ui/frame_latency.h).
+        {"display.low_latency", L"Performance / Frame Rate", L"Low latency",
+         PcSettingEditorKind::Choice, 0.0, 0.0, 0.0,
+         {{"on", L"On (recommended)"}, {"off", L"Off"}}},
         {"display.max_frame_latency", L"Advanced", L"Frame queue",
          PcSettingEditorKind::Integer, 1.0, 3.0, 1.0, {}},
         // Surfaces replace this list with plain numbers built from the
@@ -213,6 +217,12 @@ const PcSettingPresentation& PcSettingPresentationFor(std::string_view key) {
          {L"On waits for the display: no tearing, and G-SYNC/FreeSync displays still follow "
           L"the frame rate. Off shows each frame at once: lowest latency, may tear; needed "
           L"for Uncapped.", {}, {}, false, false}},
+        {"display.low_latency",
+         {L"On keeps the game at most two frames ahead of the display, so the picture "
+          L"answers the controls sooner: about a third less delay at 144 Hz with the same "
+          L"frame rate. At 60 FPS the game is never further ahead, so nothing changes there, "
+          L"and with VSync Off frames are shown at once, so it does nothing. Off lets more "
+          L"frames queue up.", {}, {}, false, true}},
         {"display.max_frame_latency",
          {L"Frames that may wait for the display. 1 responds fastest; 2 evens out uneven "
           L"frames.", {}, {}, true, false}},

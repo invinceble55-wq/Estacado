@@ -38,6 +38,7 @@ safe_area_y = 100
 # VSync never tears; G-SYNC/FreeSync displays still follow the frame rate.
 present_mode = "vsync"
 max_frame_latency = 1
+low_latency = "on"
 frame_limit = 0
 frame_rate = "60"
 menu_frame_rate = "reduced"

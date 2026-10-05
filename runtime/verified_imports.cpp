@@ -2094,6 +2094,7 @@ PPC_FUNC(__imp__VdSwap) {
     const RuntimeGraphicsSwapCommandInfo info = RuntimeGraphicsBuildSwapCommand(
         base, commandBuffer, textureFetch, systemBuffer, systemToken,
         frontbufferAddress, textureFormat, colorSpace, width, height);
+    RuntimeGraphicsGuestSwapQueued();
     uint64_t ordinal = 0;
     if (ShouldTraceHotPath(vdSwapTraceCount, ordinal)) {
         std::cout << "IMPORT_CALL name=__imp__VdSwap command_buffer=0x" << std::hex

@@ -39,6 +39,7 @@ safe_area_y = 100
 # Unsupported tearing falls back to synchronized VSync.
 present_mode = "vrr"
 max_frame_latency = 1
+low_latency = "on"
 # Host refresh/presentation settings do not unlock the guest simulation rate.
 frame_limit = 0
 frame_rate = "original"

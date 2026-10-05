@@ -108,6 +108,14 @@ present_mode = "vsync"
 # 2 is the compatibility value; 3 may smooth heavily loaded systems.
 max_frame_latency = 1
 
+# Low latency: "on" keeps the game at most two frames ahead of the display,
+# the wait ending half a frame before the awaited present so the frame rate
+# holds (VSync 144 Hz: input to present 24.9 -> 16.8 ms at 144 FPS); at 60 FPS
+# the game never runs further ahead. Only with VSync (present_mode = "vsync"):
+# with VSync off frames are shown at once and it does nothing (measured
+# uncapped: it would cost frame rate). "off" lets the frame queue fill.
+low_latency = "on"
+
 # Custom frame cap in frames per second, used when frame_rate = "custom".
 # Zero means no cap.
 frame_limit = 0

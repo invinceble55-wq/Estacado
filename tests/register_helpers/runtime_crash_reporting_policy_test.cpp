@@ -37,9 +37,10 @@ int main() {
                     "crash report provenance fields are incomplete");
     passed &= Check(text.find("RuntimeAppendPpcCrashEvidence") != std::string::npos,
                     "active PPC context is no longer appended to crash reports");
-    // Alpha crash reports: beside the executable, with a small minidump from
-    // the system dbghelp resolved before guest code runs.
-    const size_t prepare = text.find("PrepareCrashEvidence();");
+    // Crash reports: in the local data folder's logs (beside the executable
+    // for a portable copy), with a small minidump from the system dbghelp
+    // resolved before guest code runs.
+    const size_t prepare = text.find("PrepareCrashEvidence(startupLayout.localData");
     const size_t install = text.find("SetUnhandledExceptionFilter(CrashEvidence)");
     passed &= Check(prepare != std::string::npos && install != std::string::npos &&
                         prepare < install,
