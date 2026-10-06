@@ -2,7 +2,7 @@
 //
 // usage: guest_write_watch --pid N --host-address 0x... [--len 4] [--seconds 20]
 //                          [--map build/runtime/TheDarkness.map] [--out FILE]
-//                          [--max-log 64]
+//                          [--max-log 64] [--rw 1]
 //
 // Attaches to an isolated test game as a debugger, puts a hardware write
 // breakpoint (DR0) on one host address (guest base + guest address) on every
@@ -12,6 +12,8 @@
 // a big-endian float and word. Afterwards the breakpoint is removed from
 // every thread and the tool detaches; the game keeps running. Other
 // exceptions are passed to the game unchanged. Never for the owner's game.
+// --rw 1 breaks on reads too (DR7 R/W = 11: the instruction that read or
+// wrote the field).
 
 #define NOMINMAX
 #include <windows.h>
@@ -82,6 +84,7 @@ int main(int argc, char** argv) {
   std::string map_path = "build/runtime/TheDarkness.map";
   std::string out_path;
   int max_log = 64;
+  bool read_write = false;
   for (int i = 1; i + 1 < argc; i += 2) {
     const std::string key = argv[i];
     const char* value = argv[i + 1];
@@ -92,6 +95,7 @@ int main(int argc, char** argv) {
     else if (key == "--map") map_path = value;
     else if (key == "--out") out_path = value;
     else if (key == "--max-log") max_log = std::atoi(value);
+    else if (key == "--rw") read_write = std::atoi(value) != 0;
   }
   if (!pid || !host_address || (length != 1 && length != 2 && length != 4 && length != 8) ||
       host_address % length) {
@@ -113,7 +117,8 @@ int main(int argc, char** argv) {
   DebugSetProcessKillOnExit(FALSE);
 
   const uint64_t len_bits = length == 1 ? 0 : length == 2 ? 1 : length == 8 ? 2 : 3;
-  const uint64_t dr7_bits = 1ull | (1ull << 16) | (len_bits << 18);  // L0, write, length
+  // L0, write (01) or read/write (11), length.
+  const uint64_t dr7_bits = 1ull | ((read_write ? 3ull : 1ull) << 16) | (len_bits << 18);
   std::unordered_map<DWORD, HANDLE> threads;
   std::unordered_map<DWORD, bool> armed;
   HANDLE process = nullptr;

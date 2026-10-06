@@ -1,5 +1,44 @@
 # Changelog
 
+## 0.9.5 (pre-release)
+
+- **Black dots and flickering squares**
+  ([#16](https://github.com/invinceble55-wq/Estacado/issues/16), probably
+  also [#20](https://github.com/invinceble55-wq/Estacado/issues/20)): they
+  come with the game's own switch from 4x to 2x anti-aliasing. Every frame
+  the game takes the slowest of its last 10 frames: below 32 FPS it switches
+  to 2x MSAA (2 screen tiles instead of 3), and only above 38 FPS does it
+  switch back. The console did this to save graphics time on heavy frames;
+  on PC the game reads its graphics card as fully busy every frame, so a
+  loading hitch is enough to drop to 2x, a capped 30 FPS stays there, and a
+  menu at 37.5 FPS (half of a 75 Hz refresh) never gets back above 38. In a
+  two-minute test at 40 FPS the game switched 19 times, mostly around
+  loading. New setting *Settings > Graphics Quality > Multisampling (MSAA)*
+  (`graphics.msaa_mode`): **Always 4x** (the default) keeps the console's
+  normal quality all the time, *Automatic (game)* is the game's own switch,
+  *Always 2x* always uses the 2x mode; it applies at once. The game's choice
+  is replaced where it hands it to its renderer (a checked hook on the
+  renderer's option call); the frame-rate measurement itself is untouched.
+- **2x mode:** whenever the game draws a frame in 2x, the bloom fix leaves
+  out its extra smoothing of the glow (the setup the reporter's tests showed
+  clean); the glow can then show some of the 0.9.0 banding.
+  `draw_resolution_scale_native_grid_2x_msaa_filters = true` keeps the
+  smoothing there for comparison.
+- **The 0.9.4 glow change is undone:** the glow passes render on the
+  console's grid again, as in 0.9.2 to 0.9.3.1. Drawing them at the internal
+  resolution made the dots worse on the reporter's card and cost 3 to 9% GPU
+  time at 3x and 4x. Settings files with the 0.9.4 rules are updated when the
+  game starts.
+- **Speed:** Always 4x is the console's normal mode, and on PC it is also the
+  faster one above internal scale 1x: here the game's 2x mode needs about
+  twice the graphics time (Chinatown street on the test PC, arrival and
+  heaviest view: 1440p at 2x 209 / 160 FPS in 4x against 125 / 98 in 2x; 4K
+  at 3x 112 / 105 against 56 / 44; 4K at 4x 65 / 62 against 32 / 25). So a
+  card that dipped below 32 FPS once could get stuck at half its frame rate
+  with the game's own switch. At 1x the 2x mode is about 10% faster (fewer
+  screen tiles to process). Against 0.9.4, frame rates are unchanged at 1x
+  and 2x and 3 to 7% higher at 3x and 4x (both run orders).
+
 ## 0.9.4 (pre-release)
 
 - **Black dots and flickering squares above internal scale 1x** on some

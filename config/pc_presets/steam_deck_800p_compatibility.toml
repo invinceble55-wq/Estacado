@@ -22,6 +22,7 @@ motion_blur = true
 motion_blur_off_shader_pack = ""
 hd_textures = false
 temporal_aa = "off"
+msaa_mode = "4x"
 
 [present]
 effect = "auto"

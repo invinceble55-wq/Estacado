@@ -1070,6 +1070,13 @@ target_include_directories(runtime_widescreen_policy_test PRIVATE
 target_compile_features(runtime_widescreen_policy_test PRIVATE cxx_std_17)
 add_test(NAME runtime_widescreen_policy COMMAND runtime_widescreen_policy_test)
 
+# V504 (#16): the title's MSAA mode switch (runtime/runtime_msaa_mode_policy.h).
+add_executable(runtime_msaa_mode_policy_test runtime_msaa_mode_policy_test.cpp)
+target_include_directories(runtime_msaa_mode_policy_test PRIVATE
+    "${CMAKE_CURRENT_LIST_DIR}/../../runtime")
+target_compile_features(runtime_msaa_mode_policy_test PRIVATE cxx_std_17)
+add_test(NAME runtime_msaa_mode_policy COMMAND runtime_msaa_mode_policy_test)
+
 # V409: in-game language-pack text (runtime/runtime_language_text.h).
 add_executable(runtime_language_text_test runtime_language_text_test.cpp)
 target_include_directories(runtime_language_text_test PRIVATE

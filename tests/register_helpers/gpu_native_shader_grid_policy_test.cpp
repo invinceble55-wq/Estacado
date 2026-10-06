@@ -138,6 +138,34 @@ int main() {
                          last_zero * .1875 + first_first * .5625;
   check(wrapped > .2 && first_first == 0,
         "supersampling a data grid must not be mistaken for identity sampling");
+  {
+    // #16: the title's 2x-MSAA frames keep the data rules, not the filters.
+    Rules configured;
+    check(Parse(seed + ";B29F0BF45937C4C4:FAE3BACA27F09CC9:0:1280:720:6:filter;"
+                       "EC4685ADB9CCBC13:207D40E674A7C916:0:1280:720:26:filter_scaled:source=native",
+                configured) && configured.count == 3,
+          "data and filter rules parse");
+    const Rules without = WithoutImageFilters(configured);
+    check(without.count == configured.count, "rule indices are kept");
+    const Rule& data = without.entries[0];
+    check(Matches(data, data.vertex_hash, data.pixel_hash, true, 324, 18, 6, 0, 15),
+          "the data rule still matches");
+    for (uint32_t i = 1; i < 3; ++i) {
+      const Rule& filter = without.entries[i];
+      const Rule& original = configured.entries[i];
+      check(Matches(original, original.vertex_hash, original.pixel_hash, true, 1280, 720,
+                    original.format, 1, 15),
+            "the configured filter matches a 2x draw");
+      bool any = false;
+      for (uint32_t width : {1u, 160u, 324u, 1280u, 8192u}) {
+        for (uint32_t msaa_log2 = 0; msaa_log2 <= 2; ++msaa_log2) {
+          any = any || Matches(filter, filter.vertex_hash, filter.pixel_hash, true, width, 720,
+                               filter.format, msaa_log2, 15);
+        }
+      }
+      check(!any && filter.image_filter, "a left-out filter matches no texture");
+    }
+  }
   if (passed) std::cout << "Native shader data-grid policy passed\n";
   return passed ? 0 : 1;
 }

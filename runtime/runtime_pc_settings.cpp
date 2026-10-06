@@ -1414,7 +1414,7 @@ std::string RuntimePcConfigWithTitleScaleRequirements(const std::string& content
     const bool legacyRules = rules && (*rules == kLegacyTitleNativeGridRules ||
                                        *rules == kPreviousTitleNativeGridRules ||
                                        *rules == k091TitleNativeGridRules ||
-                                       *rules == k092TitleNativeGridRules);
+                                       *rules == k094TitleNativeGridRules);
     const bool hasRules = config.contains("draw_resolution_scale_native_grid_rules") && !legacyRules;
     const bool hasTracking = config.contains("native_resolve_region_tracking");
     if (hasThreshold && hasRules && hasTracking) return contents;
@@ -1589,6 +1589,20 @@ double RuntimeAudioMasterVolumeFromPcConfig(
         throw std::runtime_error("audio.master_volume must be within 0..1");
     }
     return *value;
+}
+
+msaa_mode::Policy RuntimeMsaaModeFromPcConfig(
+    const std::filesystem::path& path, const RuntimePcConfigSnapshot* snapshot) {
+    msaa_mode::Policy policy = msaa_mode::Policy::kAlways4x;
+    if (!ConfigPresent(path, snapshot)) return policy;
+    const toml::table config = ParseConfig(path, snapshot);
+    const toml::node* node = FindConfigNode(config, "graphics.msaa_mode");
+    if (!node) return policy;
+    const auto value = node->value<std::string>();
+    if (!value || !msaa_mode::ParsePolicy(*value, policy)) {
+        throw std::runtime_error("graphics.msaa_mode must be 4x, 2x, or auto");
+    }
+    return policy;
 }
 
 bool RuntimeFrameRateUsesHostPacingFromPcConfig(

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "runtime_input.h"
+#include "runtime_msaa_mode_policy.h"
 #include "runtime_user_data.h"
 
 #include <cstddef>
@@ -127,6 +128,11 @@ struct RuntimeControllerProfile {
 RuntimeControllerProfile RuntimeControllerProfileFromPcConfig(
     const std::filesystem::path& path, const RuntimePcConfigSnapshot* snapshot = nullptr);
 
+// Runtime-owned graphics.msaa_mode (#16, V504; runtime_msaa_mode.h): "4x"
+// (missing value too), "2x" or "auto" (the title's own switch).
+msaa_mode::Policy RuntimeMsaaModeFromPcConfig(
+    const std::filesystem::path& path, const RuntimePcConfigSnapshot* snapshot = nullptr);
+
 // Runtime-owned host-output setting. Missing optional config/value preserves
 // exact identity volume; validated explicit values are 0..1.
 double RuntimeAudioMasterVolumeFromPcConfig(
@@ -182,18 +188,17 @@ std::map<std::string, std::string> RuntimePcConfigSettingValues(
 // resolution_scale without them reproduces the verified atlas mis-sampling.
 // The bloom chain (downsample FAE3, blurs 9F1D/8F96) is written for 720p:
 // its taps cover a fixed texel footprint, so at internal scale it combs and
-// bands. Each pass renders at the internal scale and samples its source with
-// the console's footprint (:filter_scaled: S x S host texels box-reduced per
-// native texel, native bilinear weights), which keeps the glow smooth. Its
-// two consumers (the in-scene glow quad 207D and the final composite's tf1)
-// keep enlarging any tracked native glow with native bilinear reconstruction
+// bands. It runs on the native grid like the 1x title, and its two consumers
+// (the in-scene glow quad 207D and the final composite's tf1) enlarge the
+// tracked native glow with native bilinear reconstruction
 // (native_resolve_region_tracking, :source=native).
-// 0.9.1-0.9.3.1 rendered these passes on the native grid (:filter). Their
-// console-resolution render targets share EDRAM with the scaled scene, so
-// image areas were copied between the two resolutions every frame (more so
-// in the game's 2x-MSAA mode, where both use the same 16-tile pitch); on some
-// NVIDIA RTX 20/30 cards that left black 2x4-pixel holes and flickering
-// squares (issue #16, possibly #20), which no rule-free run showed.
+// 0.9.4 rendered the bloom passes at the internal scale with the console's
+// sampling footprint (:filter_scaled) for issue #16; that made the black
+// 2x4-pixel holes worse on the reporter's card and cost 3-9% GPU time at 3x
+// and 4x. The holes come with the game's 2x-MSAA mode (runtime_msaa_mode*):
+// graphics.msaa_mode keeps 4x by default, and the GPU plugin leaves the image
+// filters out while the game renders in 2x (the rule-free 2x frames the
+// reporter saw clean).
 // The pause menu blends its own grading table into the game's (6977, pause
 // frames only; 0.9.1, issue #10): rendered at scale, the next table pass read
 // it at native texel centres, which at even scales fall between two scaled
@@ -211,11 +216,11 @@ inline constexpr std::string_view kTitleNativeGridRules =
     "B29F0BF45937C4C4:37AC93F53126ABB7:0:324:18:26;"
     "B29F0BF45937C4C4:54D655FC471D594A:0:324:18:26;"
     "B29F0BF45937C4C4:69779AD07425E356:0:324:18:26;"
-    "B29F0BF45937C4C4:FAE3BACA27F09CC9:0:1280:720:6:filter_scaled;"
-    "B29F0BF45937C4C4:FAE3BACA27F09CC9:0:1280:720:26:filter_scaled;"
-    "B29F0BF45937C4C4:9F1D2D64E5F75924:0:1280:720:26:filter_scaled;"
-    "B29F0BF45937C4C4:9F1D2D64E5F75924:0:160:90:6:filter_scaled;"
-    "B29F0BF45937C4C4:8F96D5C280D780BC:0:1280:720:26:filter_scaled;"
+    "B29F0BF45937C4C4:FAE3BACA27F09CC9:0:1280:720:6:filter;"
+    "B29F0BF45937C4C4:FAE3BACA27F09CC9:0:1280:720:26:filter;"
+    "B29F0BF45937C4C4:9F1D2D64E5F75924:0:1280:720:26:filter;"
+    "B29F0BF45937C4C4:9F1D2D64E5F75924:0:160:90:6:filter;"
+    "B29F0BF45937C4C4:8F96D5C280D780BC:0:1280:720:26:filter;"
     "EC4685ADB9CCBC13:207D40E674A7C916:0:1280:720:26:filter_scaled:source=native;"
     "4FA9486610B42A92:22FC55CE134777AC:1:1280:720:26:filter_scaled:source=native;"
     "4FA9486610B42A92:A59B41D0BD79484B:1:1280:720:26:filter_scaled:source=native";
@@ -224,18 +229,18 @@ inline constexpr std::string_view kTitleNativeGridRules =
 // the lookup tables only (0.9.0 presets); kPreviousTitleNativeGridRules = with
 // the bloom chain, before the pause table (0.9.1 development presets);
 // k091TitleNativeGridRules = the published 0.9.1 (without the motion-blur
-// composite); k092TitleNativeGridRules = 0.9.2 to 0.9.3.1 (bloom passes on
-// the native grid, issue #16).
-inline constexpr std::string_view k092TitleNativeGridRules =
+// composite); k094TitleNativeGridRules = 0.9.4 (bloom passes at the internal
+// scale, :filter_scaled). 0.9.2 to 0.9.3.1 used kTitleNativeGridRules.
+inline constexpr std::string_view k094TitleNativeGridRules =
     "B29F0BF45937C4C4:FDC5E32EC6045BE1:1:324:18:6;"
     "B29F0BF45937C4C4:37AC93F53126ABB7:0:324:18:26;"
     "B29F0BF45937C4C4:54D655FC471D594A:0:324:18:26;"
     "B29F0BF45937C4C4:69779AD07425E356:0:324:18:26;"
-    "B29F0BF45937C4C4:FAE3BACA27F09CC9:0:1280:720:6:filter;"
-    "B29F0BF45937C4C4:FAE3BACA27F09CC9:0:1280:720:26:filter;"
-    "B29F0BF45937C4C4:9F1D2D64E5F75924:0:1280:720:26:filter;"
-    "B29F0BF45937C4C4:9F1D2D64E5F75924:0:160:90:6:filter;"
-    "B29F0BF45937C4C4:8F96D5C280D780BC:0:1280:720:26:filter;"
+    "B29F0BF45937C4C4:FAE3BACA27F09CC9:0:1280:720:6:filter_scaled;"
+    "B29F0BF45937C4C4:FAE3BACA27F09CC9:0:1280:720:26:filter_scaled;"
+    "B29F0BF45937C4C4:9F1D2D64E5F75924:0:1280:720:26:filter_scaled;"
+    "B29F0BF45937C4C4:9F1D2D64E5F75924:0:160:90:6:filter_scaled;"
+    "B29F0BF45937C4C4:8F96D5C280D780BC:0:1280:720:26:filter_scaled;"
     "EC4685ADB9CCBC13:207D40E674A7C916:0:1280:720:26:filter_scaled:source=native;"
     "4FA9486610B42A92:22FC55CE134777AC:1:1280:720:26:filter_scaled:source=native;"
     "4FA9486610B42A92:A59B41D0BD79484B:1:1280:720:26:filter_scaled:source=native";

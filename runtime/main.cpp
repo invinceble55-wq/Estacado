@@ -11,6 +11,7 @@
 #include "runtime_input.h"
 #include "runtime_job_poll_wake.h"
 #include "runtime_mouse_look.h"
+#include "runtime_msaa_mode.h"
 #include "runtime_stick_look.h"
 #include "runtime_widescreen.h"
 #include "runtime_language_pack.h"
@@ -883,6 +884,9 @@ int main(int argc, char** argv) {
         }
         ConfigureRuntimeAudioMasterVolume(
             RuntimeAudioMasterVolumeFromPcConfig(startupPcConfigPath, &startupPcConfig));
+        ConfigureRuntimeMsaaMode(
+            RuntimeMsaaModeFromPcConfig(startupPcConfigPath, &startupPcConfig), "config");
+        InitializeRuntimeMsaaModeDiagnostics();
         const uint32_t xboxLanguage =
             RuntimeXboxLanguageFromPcConfig(startupPcConfigPath, &startupPcConfig);
         if (!GetGuestXamState().ConfigureLanguage(xboxLanguage)) {

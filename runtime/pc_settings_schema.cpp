@@ -65,6 +65,11 @@ const std::vector<PcEditableSettingSpec>& PcEditableSettingsSchema() {
          PcSettingEditorKind::Choice, 0.0, 0.0, 0.0,
          {{"none", L"Off"}, {"fxaa", L"FXAA"},
           {"fxaa_extreme", L"FXAA Extreme"}, {"smaa", L"SMAA"}}},
+        // V504 (#16): the title's scene MSAA (runtime_msaa_mode_policy.h).
+        {"graphics.msaa_mode", L"Graphics Quality", L"Multisampling (MSAA)",
+         PcSettingEditorKind::Choice, 0.0, 0.0, 0.0,
+         {{"4x", L"Always 4x (recommended)"}, {"auto", L"Automatic (game)"},
+          {"2x", L"Always 2x"}}},
         // ReXGlue's present_effect (FSR 1 / CAS need no SDK).
         {"present.effect", L"Graphics Quality", L"Upscaling",
          PcSettingEditorKind::Choice, 0.0, 0.0, 0.0,
@@ -261,6 +266,14 @@ const PcSettingPresentation& PcSettingPresentationFor(std::string_view key) {
         {"anisotropic_override",
          {L"Keeps textures sharp at glancing angles. 16x is recommended.",
           {}, {}, false, false}},
+        {"graphics.msaa_mode",
+         {L"The game's own edge smoothing of the 3D scene. The console dropped from 4x to 2x "
+          L"when it ran short of graphics time; on PC that switch also reacts to loading "
+          L"hitches and slow menus (37.5 FPS on a 75 Hz screen) and can stay on 2x, where some "
+          L"graphics cards show black dots. Always 4x keeps the console's quality and, above "
+          L"internal scale 1x, is also the faster mode on PC. Always 2x is faster only at 1x. "
+          L"Automatic is the game's own switch.",
+          {}, {}, false, true}},
         {"graphics.motion_blur", {L"The game's camera motion blur.", {}, {}, false, false}},
         {"graphics.temporal_aa",
          {L"Removes shimmering and jagged edges by combining several frames, at the internal "

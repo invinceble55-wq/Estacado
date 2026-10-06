@@ -810,6 +810,33 @@ int main() {
                         RuntimeXboxLanguageFromPcConfig(
                             config_root / "absent.toml") == 1,
                     "runtime language must map Spanish and preserve absent English default");
+    // V504 (#16): graphics.msaa_mode, absent = 4x; invalid values fail early.
+    passed &= Check(RuntimeMsaaModeFromPcConfig(config_root / "absent.toml") ==
+                        msaa_mode::Policy::kAlways4x,
+                    "absent MSAA mode keeps 4x");
+    for (const auto& [name, expected] :
+         std::initializer_list<std::pair<const char*, msaa_mode::Policy>>{
+             {"4x", msaa_mode::Policy::kAlways4x}, {"2x", msaa_mode::Policy::kAlways2x},
+             {"auto", msaa_mode::Policy::kAutomatic}}) {
+      const auto msaa_path = config_root / (std::string("msaa_") + name + ".toml");
+      std::ofstream(msaa_path) << "pc_config_version = 1\n[graphics]\nmsaa_mode = \"" << name
+                               << "\"\n";
+      passed &= Check(ValidateRuntimePcConfig(msaa_path, true).valid &&
+                          RuntimeMsaaModeFromPcConfig(msaa_path) == expected,
+                      (std::string("MSAA mode failed for ") + name).c_str());
+    }
+    {
+      const auto msaa_path = config_root / "msaa_bad.toml";
+      std::ofstream(msaa_path) << "pc_config_version = 1\n[graphics]\nmsaa_mode = \"8x\"\n";
+      bool threw = false;
+      try {
+        RuntimeMsaaModeFromPcConfig(msaa_path);
+      } catch (const std::exception&) {
+        threw = true;
+      }
+      passed &= Check(!ValidateRuntimePcConfig(msaa_path, true).valid && threw,
+                      "an unsupported MSAA mode is rejected");
+    }
     for (const auto& [name, expected] :
          std::initializer_list<std::pair<const char*, uint32_t>>{
              {"english", 1}, {"german", 3}, {"french", 4},
@@ -1209,36 +1236,40 @@ int main() {
                                 .find("4FA9486610B42A92:22FC55CE134777AC:1:1280:720:26:filter_scaled:source=native") !=
                             std::string::npos,
                     "both final composites (motion blur on and off) enlarge the native glow (#16)");
-    // #16: 0.9.2-0.9.3.1 rendered the bloom passes on the native grid.
-    const std::string published092 = std::string("pc_config_version = 1\nresolution_scale = 2\n") +
+    // #16: 0.9.4 rendered the bloom passes at the internal scale
+    // (:filter_scaled); 0.9.5 returns to the 0.9.2-0.9.3.1 rules.
+    const std::string published094 = std::string("pc_config_version = 1\nresolution_scale = 2\n") +
                                       "draw_resolution_scale_threshold = 640\n" +
                                       "draw_resolution_scale_native_grid_rules = \"" +
-                                      std::string(k092TitleNativeGridRules) + "\"\n" +
+                                      std::string(k094TitleNativeGridRules) + "\"\n" +
                                       "native_resolve_region_tracking = true\n";
-    const toml::table published092_table = toml::parse(
-        RuntimePcConfigWithTitleScaleRequirements(published092, "published092", &changed));
+    const toml::table published094_table = toml::parse(
+        RuntimePcConfigWithTitleScaleRequirements(published094, "published094", &changed));
     passed &= Check(changed &&
-                        published092_table["draw_resolution_scale_native_grid_rules"].value_or(
+                        published094_table["draw_resolution_scale_native_grid_rules"].value_or(
                             std::string{}) == kTitleNativeGridRules,
-                    "the 0.9.2-0.9.3.1 rules must be upgraded (#16)");
+                    "the 0.9.4 rules must be upgraded (#16)");
     {
-        // No bloom pass renders a console-resolution target: every image
-        // filter keeps a scaled output; only the lookup tables (data rules)
-        // stay on the native grid.
+        // The bloom passes (FAE3, 9F1D, 8F96) render on the native grid
+        // (:filter); only the two glow consumers keep a scaled output and
+        // reconstruct tracked native content (:filter_scaled:source=native).
         const std::string current(kTitleNativeGridRules);
         size_t filters = 0;
-        size_t scaled = 0;
+        size_t native = 0;
         for (size_t at = 0; (at = current.find(":filter", at)) != std::string::npos; ++at) {
             ++filters;
-            if (current.compare(at, 14, ":filter_scaled") == 0) ++scaled;
+            if (current.compare(at, 14, ":filter_scaled") != 0) ++native;
         }
-        passed &= Check(filters == 8 && scaled == filters,
-                        "every bloom pass keeps a scaled output (#16)");
+        passed &= Check(filters == 8 && native == 5,
+                        "the five bloom passes render on the native grid (#16)");
         passed &= Check(current.rfind(std::string(kLegacyTitleNativeGridRules), 0) == 0 &&
                             current.find("B29F0BF45937C4C4:69779AD07425E356:0:324:18:26;") != std::string::npos,
                         "the lookup tables stay on the native grid");
-        passed &= Check(std::string(k092TitleNativeGridRules).rfind(std::string(k091TitleNativeGridRules), 0) == 0,
-                        "the 0.9.2 rules extended the 0.9.1 rules");
+        passed &= Check(current.rfind(std::string(k091TitleNativeGridRules), 0) == 0,
+                        "the rules extend the 0.9.1 rules");
+        passed &= Check(current != k094TitleNativeGridRules &&
+                            std::string(k094TitleNativeGridRules).find(":filter;") == std::string::npos,
+                        "0.9.4 rendered every bloom pass at the internal scale");
     }
     {
         // Every packaged preset and the example configuration carry exactly

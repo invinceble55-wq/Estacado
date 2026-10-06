@@ -5,6 +5,7 @@
 #include "runtime_audio.h"
 #include "runtime_graphics.h"
 #include "runtime_input.h"
+#include "runtime_msaa_mode.h"
 #include "runtime_pc_settings.h"
 #include "runtime_single_instance.h"
 
@@ -68,6 +69,11 @@ ui::Values ReadValues(const ui::Schema& schema, const std::filesystem::path& pat
 
 // Host-owned settings that apply while the game runs (atomic setters).
 void ApplyHostLive(const std::string& key, const std::string& value) {
+    if (key == "graphics.msaa_mode") {
+        msaa_mode::Policy policy;
+        if (msaa_mode::ParsePolicy(value, policy)) ConfigureRuntimeMsaaMode(policy, "overlay");
+        return;
+    }
     char* end = nullptr;
     const double number = std::strtod(value.c_str(), &end);
     if (!end || *end != '\0') return;

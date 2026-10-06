@@ -29,7 +29,8 @@ A Steam Deck preset is included. If you copy the folder to a Deck, see
   automatic (the launcher measures your graphics card once), fitted to any
   output resolution; windowed, borderless or automatic.
 - **Anti-aliasing**: SMAA (default) or FXAA; AMD FSR 1 or CAS sharpening when
-  the image is fitted to your screen.
+  the image is fitted to your screen. The game's own 4x MSAA stays on all the
+  time by default (the console dropped to 2x when it ran slowly).
 - **Widescreen (experimental)**: fills 21:9, 32:9 and 16:10 screens with more
   view at the sides; menus stay centred.
 - **Controls**: keyboard and mouse with native mouse look and rebindable
@@ -175,9 +176,11 @@ Windows display language.
 - Black dots or flickering dark squares above internal scale 1x on some
   NVIDIA RTX 20 and 30 series cards
   ([#16](https://github.com/invinceble55-wq/Estacado/issues/16),
-  [#20](https://github.com/invinceble55-wq/Estacado/issues/20)): 0.9.4
-  removes the cause the tests on an affected card pointed at; confirmation
-  from affected cards is pending (internal scale 1x avoids them).
+  [#20](https://github.com/invinceble55-wq/Estacado/issues/20)): they come
+  with the game's own switch to 2x anti-aliasing. Since 0.9.5 the game stays
+  in 4x (*Graphics Quality > Multisampling (MSAA)*, Always 4x), and the 2x
+  mode leaves out the glow smoothing they came with; confirmation from
+  affected cards is pending.
 - Being looked into: green glitches in the Otherworld until a restart
   ([#14](https://github.com/invinceble55-wq/Estacado/issues/14)) and face
   shading that flickers in some conversations

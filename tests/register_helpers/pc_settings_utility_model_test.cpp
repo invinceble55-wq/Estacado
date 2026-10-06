@@ -116,7 +116,8 @@ int main() {
                         L"C:\\Game\\TheDarkness.exe --edit-config --set-config audio.master_volume=0.5 --overwrite-config",
                     "current-settings edit must not reload a packaged preset");
     passed &= Check(kPcEditableSettingsSchemaVersion == 1 &&
-                        schema.size() == 53 &&
+                        schema.size() == 54 &&
+                        FindPcEditableSetting("graphics.msaa_mode") &&
                         FindPcEditableSetting("input.button_prompts") &&
                         FindPcEditableSetting("display.widescreen") &&
                         FindPcEditableSetting("graphics.hd_textures") &&
