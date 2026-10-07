@@ -530,6 +530,7 @@ int main(int argc, char** argv) {
                     std::cout << "PC_CONFIG_KEY_BINDINGS revision=" << kRuntimeKeyBindingsRevision
                               << " outcome=" << upgrade.outcome
                               << " swapped=" << (upgrade.swapped ? 1 : 0)
+                              << " glow_reconstruction=" << (upgrade.glow_reconstruction ? 1 : 0)
                               << (error.empty() ? std::string() : " error=" + error) << '\n';
                 }
             }

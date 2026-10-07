@@ -1499,6 +1499,43 @@ int main() {
                       "inspection must show the upgraded keys without writing the file");
     }
 
+    // 0.9.6: "on" draws the #16 test builds' Test A, so a configuration
+    // saved with "dedicated" becomes "on" (shown so before its next start);
+    // "on" and "off" stay as they are.
+    {
+      RuntimeKeyBindingsUpgrade result;
+      const std::string test_a =
+          "pc_config_version = 1\n[graphics]\nglow_reconstruction = 'dedicated'\n";
+      const toml::table upgraded_glow =
+          toml::parse(RuntimePcConfigWithKeyBindingsUpgrade(test_a, "glow.toml", &result));
+      passed &= Check(result.changed && result.glow_reconstruction &&
+                          upgraded_glow["graphics"]["glow_reconstruction"].value_or(std::string{}) ==
+                              "on",
+                      "a test build's Test A choice must become on");
+      for (const char* kept : {"on", "off"}) {
+        const std::string text = std::string("pc_config_version = 1\n[graphics]\n") +
+                                 "glow_reconstruction = '" + kept + "'\n";
+        passed &= Check(RuntimePcConfigWithKeyBindingsUpgrade(text, "glow.toml", &result) == text &&
+                            !result.changed && !result.glow_reconstruction,
+                        "on and off must stay byte-identical");
+      }
+      const auto glow_file = executable_directory / "glow_test_a.toml";
+      std::ofstream(glow_file, std::ios::binary | std::ios::trunc) << test_a;
+      const auto glow_values = RuntimePcConfigSettingValues(glow_file);
+      passed &= Check(ValidateRuntimePcConfig(glow_file, true).valid &&
+                          glow_values.count("graphics.glow_reconstruction") &&
+                          glow_values.at("graphics.glow_reconstruction") == "on",
+                      "a Test A configuration not yet upgraded must validate and show on");
+      std::string error;
+      const auto first = RuntimeUpgradePcConfigFileKeyBindings(glow_file, &error);
+      const auto saved = toml::parse_file(glow_file.string());
+      const auto second = RuntimeUpgradePcConfigFileKeyBindings(glow_file, &error);
+      passed &= Check(first.changed && first.glow_reconstruction && error.empty() &&
+                          saved["graphics"]["glow_reconstruction"].value_or(std::string{}) == "on" &&
+                          !second.changed,
+                      "a game start must upgrade a Test A file once");
+    }
+
     // Saved configurations stay readable: a 0.01-step value prints as typed.
     const auto source = executable_directory / "readable_source.toml";
     const auto target = executable_directory / "readable_saved.toml";

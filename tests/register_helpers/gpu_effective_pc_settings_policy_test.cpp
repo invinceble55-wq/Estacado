@@ -32,6 +32,7 @@ int main() {
       "window_mode", "output_resolution", "resolution_scale",
       "draw_resolution_scale_threshold",
       "swap_post_effect", "anisotropic_override", "graphics_motion_blur",
+      "graphics_glow_reconstruction",
       "display_present_mode", "display_max_frame_latency",
       "display_frame_limit", "display_frame_rate", "display_vsync_interval",
       "camera_field_of_view", "input_keyboard_mouse",

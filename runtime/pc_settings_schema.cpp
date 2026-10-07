@@ -70,6 +70,12 @@ const std::vector<PcEditableSettingSpec>& PcEditableSettingsSchema() {
          PcSettingEditorKind::Choice, 0.0, 0.0, 0.0,
          {{"4x", L"Always 4x (recommended)"}, {"auto", L"Automatic (game)"},
           {"2x", L"Always 2x"}}},
+        // V508 (#16): the image-filter native-grid rules (ReXGlue
+        // graphics_glow_reconstruction, live in the overlay). 0.9.6: On is
+        // the test builds' Test A ("dedicated", upgraded to "on").
+        {"graphics.glow_reconstruction", L"Graphics Quality", L"Glow reconstruction",
+         PcSettingEditorKind::Choice, 0.0, 0.0, 0.0,
+         {{"on", L"On (recommended)"}, {"off", L"Off"}}},
         // ReXGlue's present_effect (FSR 1 / CAS need no SDK).
         {"present.effect", L"Graphics Quality", L"Upscaling",
          PcSettingEditorKind::Choice, 0.0, 0.0, 0.0,
@@ -269,10 +275,14 @@ const PcSettingPresentation& PcSettingPresentationFor(std::string_view key) {
         {"graphics.msaa_mode",
          {L"The game's own edge smoothing of the 3D scene. The console dropped from 4x to 2x "
           L"when it ran short of graphics time; on PC that switch also reacts to loading "
-          L"hitches and slow menus (37.5 FPS on a 75 Hz screen) and can stay on 2x, where some "
-          L"graphics cards show black dots. Always 4x keeps the console's quality and, above "
-          L"internal scale 1x, is also the faster mode on PC. Always 2x is faster only at 1x. "
-          L"Automatic is the game's own switch.",
+          L"hitches and slow menus (37.5 FPS on a 75 Hz screen) and can stay on 2x. Always 4x "
+          L"keeps the console's quality and, above internal scale 1x, is also the faster mode "
+          L"on PC. Always 2x is faster only at 1x. Automatic is the game's own switch.",
+          {}, {}, false, true}},
+        {"graphics.glow_reconstruction",
+         {L"Above internal scale 1x, keeps the glow around lights and in bright flashes as "
+          L"smooth as on the console. Off draws the glow as in 0.9.0, with a little banding in "
+          L"bright flashes; use it if the glow looks wrong on your graphics card.",
           {}, {}, false, true}},
         {"graphics.motion_blur", {L"The game's camera motion blur.", {}, {}, false, false}},
         {"graphics.temporal_aa",

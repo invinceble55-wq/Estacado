@@ -84,6 +84,12 @@ temporal_aa = "off"
 # of its last 10 frames is below 32 FPS and returns above 38 (a loading hitch
 # or a 37.5 FPS menu on a 75 Hz screen can keep it on 2x).
 msaa_mode = "4x"
+# Glow reconstruction, above internal scale 1x: "on" keeps the glow around
+# lights and in bright flashes as smooth as on the console; "off" draws it as
+# in 0.9.0, with a little banding in bright flashes (a fallback if the glow
+# looks wrong on your graphics card). The in-game overlay (F1) applies a
+# change at once.
+glow_reconstruction = "on"
 
 [present]
 # Upscaling: how the rendered image is fitted to the screen.

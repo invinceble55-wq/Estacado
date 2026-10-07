@@ -35,7 +35,26 @@ namespace {
 // Values a choice setting accepts beyond its listed choices: whole-number
 // frame-rate caps (V330; the surfaces list the ones that suit the display).
 bool IsExtraChoiceValue(std::string_view key, std::string_view value) {
-    return key == "display.frame_rate" && rex::ui::IsFrameRateValue(value);
+    // graphics.glow_reconstruction: the #16 test builds' "dedicated" (Test A,
+    // upgraded to "on", see UpgradeGlowReconstruction) and diagnostics (ReXGlue
+    // native_shader_scale_policy::ParseGlowPolicy; player builds draw "on"),
+    // not offered in the menus.
+    return (key == "display.frame_rate" && rex::ui::IsFrameRateValue(value)) ||
+           (key == "graphics.glow_reconstruction" &&
+            (value == "dedicated" || value == "shader" || value == "passes" ||
+             value == "composites" || value == "dedicated_scaled" ||
+             value == "dedicated_passes" || value == "dedicated_reconstructed"));
+}
+
+// 0.9.6: "on" draws what the #16 test builds called Test A ("dedicated"),
+// so a configuration saved with Test A shows and keeps On.
+bool UpgradeGlowReconstruction(toml::table& config) {
+    toml::table* graphics = config["graphics"].as_table();
+    toml::node* node = graphics ? graphics->get("glow_reconstruction") : nullptr;
+    const auto value = node ? node->value<std::string>() : std::nullopt;
+    if (!value || *value != "dedicated") return false;
+    graphics->insert_or_assign("glow_reconstruction", std::string("on"));
+    return true;
 }
 
 bool ConfigPresent(const std::filesystem::path& path, const RuntimePcConfigSnapshot* snapshot) {
@@ -1239,8 +1258,10 @@ std::map<std::string, std::string> RuntimePcConfigSettingValues(
     const std::filesystem::path& path) {
     std::map<std::string, std::string> values;
     toml::table config = toml::parse_file(path.u8string());
-    // A 0.9.0 configuration shows the keys its next start or save gives it.
+    // A 0.9.0 configuration shows the keys its next start or save gives it
+    // (and a test build's glow choice its 0.9.6 name).
     UpgradeKeyBindings(config);
+    UpgradeGlowReconstruction(config);
     for (const PcEditableSettingSpec& setting : PcEditableSettingsSchema()) {
         const toml::node* node = FindConfigNode(config, setting.key);
         if (!node) continue;
@@ -1378,7 +1399,11 @@ std::string RuntimePcConfigWithKeyBindingsUpgrade(const std::string& contents,
                                                   const std::string& sourceName,
                                                   RuntimeKeyBindingsUpgrade* result) {
     toml::table config = toml::parse(contents, sourceName);
-    const RuntimeKeyBindingsUpgrade upgrade = UpgradeKeyBindings(config);
+    RuntimeKeyBindingsUpgrade upgrade = UpgradeKeyBindings(config);
+    if (UpgradeGlowReconstruction(config)) {
+        upgrade.glow_reconstruction = true;
+        upgrade.changed = true;
+    }
     if (result) *result = upgrade;
     if (!upgrade.changed) return contents;
     std::ostringstream serialized;
@@ -1450,8 +1475,10 @@ std::vector<std::string> RuntimePcConfigInspectionLines(
 
     toml::table config = toml::parse_file(path.u8string());
     // A 0.9.0 configuration with saved keys shows the keys its next start or
-    // save gives it (the launcher reads its values from here).
+    // save gives it (the launcher reads its values from here), a test build's
+    // glow choice its 0.9.6 name.
     UpgradeKeyBindings(config);
+    UpgradeGlowReconstruction(config);
     std::vector<std::string> leaves;
     std::vector<std::string> unsupportedTypes;
     CollectConfigLeaves(config, {}, leaves, unsupportedTypes);
@@ -1919,6 +1946,7 @@ RuntimePcConfigInstallResult InstallRuntimePcPresetWithOverrides(
     // (before the overrides, so a key the player sets now wins); saved
     // bindings are marked current.
     UpgradeKeyBindings(config);
+    UpgradeGlowReconstruction(config);
     std::set<std::string> seen;
     for (const auto& override : overrides) {
         if (!seen.insert(override.key).second) {

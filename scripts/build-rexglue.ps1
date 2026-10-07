@@ -28,7 +28,7 @@ if (-not (Test-Path -LiteralPath $source -PathType Container)) {
 # The project's configuration: ThinLTO, the GPU PGO profile when present,
 # player builds without diagnostics, Direct3D 12 only, no ReXGlue tests, the
 # FidelityFX API from build/deps (scripts/fetch-sdks.ps1) instead of a fetch.
-$profile = Join-Path $root 'config/pgo/rexgpu-v496.profdata'
+$profile = Join-Path $root 'config/pgo/rexgpu-v519.profdata'
 $pgo = 'OFF'
 if (-not $NoPgo -and (Test-Path -LiteralPath $profile -PathType Leaf)) { $pgo = 'USE' }
 $options = @(

@@ -1,5 +1,35 @@
 # Changelog
 
+## 0.9.6 (pre-release)
+
+- **Black dots and flickering squares fixed**
+  ([#16](https://github.com/invinceble55-wq/Estacado/issues/16)): the
+  reporter's tests showed that they follow the extra glow smoothing that
+  0.9.1 to 0.9.5 add above internal scale 1x, not the MSAA mode. That
+  smoothing ran inside the game's glow shaders: a modified version of each
+  glow shader rebuilt the console-resolution glow from the higher-resolution
+  images while it drew. Now the game's own, unmodified glow shaders read
+  console-size copies of the glow images: before a glow pass or a glow
+  composite reads a higher-resolution image, each console pixel is averaged
+  from its block of high-resolution pixels into a separate image in its own
+  video memory, and the graphics card filters that image as the console
+  does. The result is the same smooth glow, at the same speed. Thanks to
+  [@blax434-ctrl](https://github.com/blax434-ctrl) for the patient testing
+  that found the cause.
+- New setting *Settings > Graphics Quality > Glow reconstruction*
+  (`graphics.glow_reconstruction`): **On** (the default) is the new glow,
+  **Off** the 0.9.0 glow (a little banding in bright flashes), as a fallback
+  if the glow looks wrong on your graphics card; it applies at once. Settings
+  files from the #16 test builds with *Test A* (`dedicated`) are updated to
+  `on` when the game starts; a choice of *Off* stays.
+- The 0.9.1 to 0.9.5 smoothing shader is no longer used by the game.
+- **Speed:** the same as 0.9.5 at internal scales 1x to 4x (Chinatown street
+  on the test PC, arrival and heaviest view, native, 1080p and 4K output,
+  motion blur on and off: within 1.5%).
+- **Building from source:** the repository now includes the GPU optimization
+  profile the release is built with (`config/pgo/rexgpu-v519.profdata`), so
+  builds from source match the release's speed.
+
 ## 0.9.5 (pre-release)
 
 - **Black dots and flickering squares**

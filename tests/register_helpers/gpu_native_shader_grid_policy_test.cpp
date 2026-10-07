@@ -1,3 +1,4 @@
+#include <array>
 #include <cmath>
 #include <iostream>
 #include <string>
@@ -165,6 +166,77 @@ int main() {
       }
       check(!any && filter.image_filter, "a left-out filter matches no texture");
     }
+    // Glow reconstruction (#16, graphics_glow_reconstruction): on keeps every
+    // rule, off and 2x-MSAA frames keep the data rule, passes drops only the
+    // scaled-output composite; names round-trip, unknown text is rejected.
+    GlowPolicy glow = GlowPolicy::kOff;
+    check(ParseGlowPolicy("", glow) && glow == GlowPolicy::kOn, "empty is on");
+    glow = GlowPolicy::kOff;
+    check(ParseGlowPolicy("dedicated", glow) && glow == GlowPolicy::kOn,
+          "the test builds' Test A (dedicated) is on");
+    for (GlowPolicy p : {GlowPolicy::kOn, GlowPolicy::kOff, GlowPolicy::kShader,
+                         GlowPolicy::kPassesOnly, GlowPolicy::kCompositesOnly,
+                         GlowPolicy::kDedicatedScaled, GlowPolicy::kDedicatedPasses,
+                         GlowPolicy::kDedicatedReconstructed}) {
+      GlowPolicy parsed = GlowPolicy::kOn;
+      check(ParseGlowPolicy(GlowPolicyName(p), parsed) && parsed == p, "policy names round-trip");
+      // Player builds (no GPU diagnostics) draw on or off only: the
+      // reconstruction shader and the other diagnostics are retired there.
+      const bool diagnostic = p != GlowPolicy::kOn && p != GlowPolicy::kOff;
+      check(IsGlowDiagnostic(p) == diagnostic &&
+                AvailableGlowPolicy(p, false) == (diagnostic ? GlowPolicy::kOn : p) &&
+                AvailableGlowPolicy(p, true) == p,
+            "diagnostics only in diagnostics builds");
+    }
+    check(std::string_view(GlowPolicyName(GlowPolicy::kOn)) == "on" &&
+              std::string_view(GlowPolicyName(GlowPolicy::kShader)) == "shader",
+          "on is the dedicated-image glow, shader the retired reconstruction shader");
+    check(!ParseGlowPolicy("On", glow) && !ParseGlowPolicy("true", glow) &&
+              glow == GlowPolicy::kOn,
+          "unknown policy text is rejected and leaves the value");
+    const auto widths = [](const Rules& rules) {
+      return std::array<uint32_t, 3>{rules.entries[0].width, rules.entries[1].width,
+                                     rules.entries[2].width};
+    };
+    check(widths(EffectiveRules(configured, GlowPolicy::kOn, false)) ==
+              std::array<uint32_t, 3>{324, 1280, 1280},
+          "on keeps every rule");
+    check(widths(EffectiveRules(configured, GlowPolicy::kOff, false)) ==
+              std::array<uint32_t, 3>{324, 0, 0},
+          "off keeps the data rule only");
+    check(widths(EffectiveRules(configured, GlowPolicy::kOn, true)) ==
+              std::array<uint32_t, 3>{324, 0, 0},
+          "a 2x-MSAA frame keeps the data rule only");
+    check(widths(EffectiveRules(configured, GlowPolicy::kPassesOnly, false)) ==
+              std::array<uint32_t, 3>{324, 1280, 0},
+          "passes drops the scaled-output composite");
+    check(widths(EffectiveRules(configured, GlowPolicy::kCompositesOnly, false)) ==
+              std::array<uint32_t, 3>{324, 1280, 1280},
+          "composites keeps every rule (the passes sample normally at draw time)");
+    // Dedicated glow images (on and its diagnostics): the same rules;
+    // dedicated_scaled draws every image filter at the internal resolution (no
+    // native-grid glow pass is left).
+    check(UsesDedicatedGlowImages(GlowPolicy::kOn) &&
+              UsesDedicatedGlowImages(GlowPolicy::kDedicatedScaled) &&
+              UsesDedicatedGlowImages(GlowPolicy::kDedicatedPasses) &&
+              UsesDedicatedGlowImages(GlowPolicy::kDedicatedReconstructed) &&
+              !UsesDedicatedGlowImages(GlowPolicy::kShader) &&
+              !UsesDedicatedGlowImages(GlowPolicy::kPassesOnly) &&
+              !UsesDedicatedGlowImages(GlowPolicy::kCompositesOnly) &&
+              !UsesDedicatedGlowImages(GlowPolicy::kOff),
+          "on and the dedicated diagnostics use glow images, the shader policies never");
+    check(widths(EffectiveRules(configured, GlowPolicy::kShader, false)) ==
+              std::array<uint32_t, 3>{324, 1280, 1280},
+          "shader keeps every rule");
+    const Rules scaled = EffectiveRules(configured, GlowPolicy::kDedicatedScaled, false);
+    check(!scaled.entries[0].scaled_filter_output && scaled.entries[1].scaled_filter_output &&
+              scaled.entries[2].scaled_filter_output &&
+              RequiresNativeRasterization(scaled.entries[0], 0) &&
+              !RequiresNativeRasterization(scaled.entries[1], 0),
+          "dedicated_scaled draws the image filters at the internal resolution");
+    check(widths(EffectiveRules(configured, GlowPolicy::kDedicatedScaled, true)) ==
+              std::array<uint32_t, 3>{324, 0, 0},
+          "a 2x-MSAA frame keeps the data rule only with dedicated_scaled too");
   }
   if (passed) std::cout << "Native shader data-grid policy passed\n";
   return passed ? 0 : 1;

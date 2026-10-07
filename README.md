@@ -173,14 +173,12 @@ Windows display language.
 - Shaders the release's list does not cover yet (mostly later levels) are
   compiled for your graphics card the first time they appear, which can
   stutter briefly; later sessions reuse them.
-- Black dots or flickering dark squares above internal scale 1x on some
-  NVIDIA RTX 20 and 30 series cards
-  ([#16](https://github.com/invinceble55-wq/Estacado/issues/16),
-  [#20](https://github.com/invinceble55-wq/Estacado/issues/20)): they come
-  with the game's own switch to 2x anti-aliasing. Since 0.9.5 the game stays
-  in 4x (*Graphics Quality > Multisampling (MSAA)*, Always 4x), and the 2x
-  mode leaves out the glow smoothing they came with; confirmation from
-  affected cards is pending.
+- Black flickering on some cards
+  ([#20](https://github.com/invinceble55-wq/Estacado/issues/20)): probably
+  the same cause as the black dots and flickering squares of
+  [#16](https://github.com/invinceble55-wq/Estacado/issues/16), fixed in
+  0.9.6; confirmation pending. If the glow looks wrong on your graphics
+  card, *Graphics Quality > Glow reconstruction > Off* draws it as in 0.9.0.
 - Being looked into: green glitches in the Otherworld until a restart
   ([#14](https://github.com/invinceble55-wq/Estacado/issues/14)) and face
   shading that flickers in some conversations
@@ -258,6 +256,9 @@ recompiles your own `default.xex`, builds the runtime and packages it.
   [Estacado-ReXGlue #1](https://github.com/invinceble55-wq/Estacado-ReXGlue/pull/1)),
   the Quit game button, and the idea of keeping saves outside the program
   folder ([#7](https://github.com/invinceble55-wq/Estacado/issues/7)).
+- [blax434-ctrl](https://github.com/blax434-ctrl): the patient testing that
+  found the cause of the black dots and flickering squares
+  ([#16](https://github.com/invinceble55-wq/Estacado/issues/16)).
 - The [ReXGlue SDK](https://github.com/rexglue/rexglue-sdk) and the
   [Xenia](https://github.com/xenia-project/xenia) project, whose work this
   port's system and graphics layer builds on.

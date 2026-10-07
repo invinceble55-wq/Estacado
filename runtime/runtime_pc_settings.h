@@ -330,6 +330,9 @@ struct RuntimeKeyBindingsUpgrade {
     bool changed = false;  // the configuration text changed (marked)
     bool swapped = false;  // A and Y moved to E and Space
     std::string outcome;   // current, no_bindings, swapped, custom, conflict
+    // 0.9.6: graphics.glow_reconstruction "dedicated" (the #16 test builds'
+    // Test A) became "on", which now draws it.
+    bool glow_reconstruction = false;
 };
 // The upgrade of configuration text: unchanged text when it is already current.
 std::string RuntimePcConfigWithKeyBindingsUpgrade(const std::string& contents,
